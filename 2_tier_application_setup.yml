@@ -1,4 +1,5 @@
-# This is  application server's depoyment steps , automated with ansible playbook and the db server running in pvt subnet which details are mentoned in applcation's connction.propertied file
+# This is  application server's depoyment steps , automated with ansible playbook and the db server running in pvt subnet 
+which details are mentoned in applcation's connction.properties file
 
 #Yaml
 
