@@ -1,7 +1,7 @@
 # This is  application server's depoyment steps , automated with ansible playbook and the db server running in pvt subnet 
 which details are mentoned in applcation's connction.properties file
 
-#Yaml
+#Yaml file
 
 - hosts: web-server    # host details mention in hosts file under host group to create connection with application server
   gather_facts: no
