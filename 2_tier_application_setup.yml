@@ -62,7 +62,7 @@ which details are mentoned in applcation's connction.properties file
                state: started
            - pause:
               seconds: 180
-           - name: "chaging permissions"
+           - name: "changing permissions"
              file:
                path: /opt/tomcat/webapps/site1
                owner: dep-user
