@@ -1,0 +1,83 @@
+# This is  application server's depoyment steps , automated with ansible playbook and the db server running in pvt subnet which details are mentoned in applcation's connction.propertied file
+
+#Yaml
+
+- hosts: web-server    # host details mention in hosts file under host group to create connection with application server
+  gather_facts: no
+  user: dep-user
+  become: yes
+  become_method: sudo
+  tasks:
+          - name: "checking current date and time"
+            set_fact:
+              temp: "{{lookup('pipe''date \"+%d-%m-%Y-%H-%M-%S\"')}}"
+          - name: "checking backup directory"
+            stat:
+              path: /opt/project_backup/site1-{{ temp }}
+            register: backup_folder
+          - name: "skip if directory existed"
+            debug:
+              msg: "backup directory existed"
+            when: backup_folder.stat.exists
+          - name: "create backup directory if not existed"
+            file:
+              path: /opt/project_backup/site1-{{ temp }}
+              owner: dep-user
+              group: dep
+              mode: 0755
+              recurse: yes
+            when: backup_folder.stat.exists == false
+          - name: "stop tomcat service"
+            systemd:
+              name: tomcat.service
+              state: stopped
+          - name: "taking backup of running site-1"
+            copy:
+              path: /opt/tomcat/webapps/{{ item }}
+              dest: /opt/project_backup/site1-{{ temp }}
+              remote_src: yes
+            with_items:
+              - site1
+              - site1.war
+           - name: "removing old running site-1"
+             file:
+               path: /opt/tomcat/webapps/{{ item }}
+               state: absent
+             with_items:
+               - site1
+               - site1.war
+           - name: "deploy new war file"
+             copy:
+               path: /opt/jenkins/uat/target/site1-snapshot.war
+               dest: /opt/tomcat/webapps/
+               owner: dep-user
+               group: dep
+               mode: '0655'
+           - name: "rename war file"
+             command: mv /opt/tomcat/webapps/site1-snapshot.war /opt/tomcat/webapps/site1.war
+           - name: "starting tomcat"
+             systemd:
+               name: tomcat.service
+               state: started
+           - pause:
+              seconds: 180
+           - name: "chaging permissions"
+             file:
+               path: /opt/tomcat/webapps/site1
+               owner: dep-user
+               group: dep
+               mode: '0755'
+               recurse: yes
+           - name: "delete older file more than 2 days"
+             find:
+               paths: /opt/backup/
+               age: 2d
+               file_type: directory
+               pattern: site1*
+             register: delete_file
+          - name: "removing" 
+            file:
+              path: "{{ item.path }}"
+              state: absent
+            with_items: "{{ delete_file.files }}"
+
